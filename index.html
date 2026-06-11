@@ -1211,7 +1211,7 @@ function renderDashboard(){
   document.getElementById('s-total').textContent=total;
   document.getElementById('s-comp').textContent=comp;
   document.getElementById('s-open').textContent=open;
-  document.getElementById('s-rate').textContent=active?Math.round(comp/active*100)+'%':'--';
+  document.getElementById('s-rate').textContent=total?Math.round(comp/total*100)+'%':'--';
   renderMonthlyTable();
   renderFreqGrid();
   renderOpenList();
