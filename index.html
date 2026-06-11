@@ -2619,16 +2619,19 @@ function pickResolution(type){
   if(type==='complete'){
     photoUploaded.complete=false;
     document.getElementById('complete-upload').classList.remove('has-file');
-    document.getElementById('complete-photo-name').textContent='Upload photo of resolved issue';
+    document.getElementById('complete-photo-name').textContent='Click to browse or drag & drop proof photo';
     document.getElementById('complete-photo-name').style.color='';
+    document.getElementById('complete-file-input').value='';
     document.getElementById('complete-error').style.display='none';
+    document.getElementById('complete-name-error').style.display='none';
     document.getElementById('complete-date-input').value=liveISO();
     const cby=document.getElementById('complete-resolved-by');if(cby)cby.value=getCurrentUserName();
-    document.getElementById('complete-name-error').style.display='none';
+    const notesEl=document.querySelector('#modal-complete textarea');if(notesEl)notesEl.value='';
     document.getElementById('modal-complete').style.display='flex';
   } else {
     document.getElementById('notdone-date-input').value=liveISO();
     const nby=document.getElementById('notdone-resolved-by');if(nby)nby.value=getCurrentUserName();
+    const notesEl=document.querySelector('#modal-notdone textarea');if(notesEl)notesEl.value='';
     document.getElementById('modal-notdone').style.display='flex';
   }
 }
