@@ -243,8 +243,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margi
 .mobile-full-link{display:none}
 .mobile-return-link{display:none}
 .mobile-action-bar{display:none}
-body.manager-role .nav-item[onclick*="notifications"], body.manager-role .nav-item[onclick*="tasks"]{display:none!important;}
-body.manager-role #view-notifications{display:none!important;}
+body.manager-role .nav-item[onclick*="tasks"]{display:none!important;}
 @media (max-width: 760px){
   body:not(.force-desktop) .app{height:100dvh;display:block;overflow:hidden;}
   body:not(.force-desktop) .sidebar{display:none;}
@@ -316,7 +315,6 @@ body.manager-role #view-notifications{display:none!important;}
     <div class="nav-section">Overview</div>
     <div class="nav-item active" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
     <div class="nav-item" onclick="nav('tasks',this)"><i class="ti ti-clipboard-list"></i>All Tasks</div>
-    <div class="nav-item" onclick="nav('notifications',this)"><i class="ti ti-bell"></i>Notifications<span class="nav-badge" id="notif-count">3</span></div>
     <div class="nav-section" style="color:#7ec8f8;letter-spacing:.1em">CA — California</div>
     <div class="nav-item" onclick="nav('dept',this)" data-dept="CA-Production"><span class="dept-emoji">🏭</span>Production</div>
     <div class="nav-item" onclick="nav('dept',this)" data-dept="CA-Warehouse"><span class="dept-emoji">📦</span>Warehouse</div>
@@ -436,18 +434,6 @@ body.manager-role #view-notifications{display:none!important;}
 </div>
 
 <!-- NOTIFICATIONS -->
-<div id="view-notifications" class="view">
-  <div class="card">
-    <div class="card-header"><span class="card-title">🔔 Notification Log</span><button class="btn btn-primary btn-sm" onclick="showNotifModal()"><i class="ti ti-send"></i>Send task reminders</button></div>
-    <div id="notification-list"></div>
-  </div>
-  <div class="card">
-    <div class="card-header"><span class="card-title">📅 Inspection Reminders</span><button class="btn btn-olive btn-sm" onclick="sendInspectionReminders()"><i class="ti ti-send"></i>Send 3-day reminders</button></div>
-    <div class="alert alert-info"><i class="ti ti-info-circle"></i>Sends reminders for inspections due within 3 days. Add manager emails in Settings first.</div>
-    <div id="dashboard-upcoming-inspections-notifications" class="upcoming-list"></div>
-  </div>
-</div>
-
 <!-- DEPT VIEW -->
 <div id="view-dept" class="view">
   <div class="stat-grid" id="dept-stats"></div>
@@ -1410,15 +1396,13 @@ function showDetail(id){
 
 function renderNotifications(){
   const active=NOTIFICATIONS.filter(function(n){return !n.removed;});
-  const badge=document.getElementById('notif-count');
-  if(badge){badge.textContent=active.length;badge.style.display=active.length?'':'none';}
   const el=document.getElementById('notification-list');if(!el)return;
   const typeDot={complete:'var(--green)',new:'var(--blue)',inspection:'var(--purple)',open:'var(--amber)'};
   el.innerHTML=active.length?active.map(function(n){return '<div class="notif-item"><div class="notif-dot" style="background:'+(typeDot[n.type||'open']||'var(--amber)')+'"></div><div style="flex:1"><div style="font-size:12px;font-weight:700">'+n.title+'</div><div style="font-size:11px;color:var(--text3);margin-top:1px">'+n.body+'</div></div><button class="notif-remove" onclick="removeNotification('+n.id+')"><i class="ti ti-x"></i></button></div>';}).join(''):'<div style="text-align:center;padding:24px;color:var(--text3)">No notifications.</div>';
 }
 
 function removeNotification(id){NOTIFICATIONS=NOTIFICATIONS.filter(function(x){return x.id!==id;});dbSaveNotifications();renderNotifications();showToast('Notification removed.','success');}
-function addNotification(type,dept,title,body){NOTIFICATIONS.unshift({id:Date.now()+Math.floor(Math.random()*1000),type:type,dept:dept,title:title,body:body,removed:false});dbSaveNotifications();renderNotifications();}
+function addNotification(type,dept,title,body){ /* notifications removed */ }
 
 async function sendInspectionReminders(){
   // Find next upcoming inspection date
@@ -2686,7 +2670,7 @@ function refreshCurrentView(){
   if(document.getElementById('view-dashboard').classList.contains('active'))renderDashboard();
   if(document.getElementById('view-tasks').classList.contains('active'))renderTasks(currentTaskFilter||'all');
   if(document.getElementById('view-dept').classList.contains('active'))renderDeptView(currentDept,currentDeptFilter);
-  if(document.getElementById('view-notifications').classList.contains('active'))renderNotifications();
+
   if(document.getElementById('view-settings').classList.contains('active')){renderEmailList();renderDeptManageList();}
 }
 
