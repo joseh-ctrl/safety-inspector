@@ -323,6 +323,7 @@ body.manager-role #view-notifications{display:none!important;}
     <div class="nav-item" onclick="nav('dept',this)" data-dept="CA-Printing"><span class="dept-emoji">🖼️</span>Printing</div>
     <div class="nav-section" style="color:#c8e89a;letter-spacing:.1em">PA — Pennsylvania</div>
     <div class="nav-item" onclick="nav('dept',this)" data-dept="PA-Production"><span class="dept-emoji">🏭</span>Production</div>
+    <div class="nav-item" onclick="nav('dept',this)" data-dept="PA-Warehouse"><span class="dept-emoji">📦</span>Warehouse</div>
     <div class="nav-item" onclick="nav('dept',this)" data-dept="PA-Manufacturing"><span class="dept-emoji">⚙️</span>Manufacturing</div>
     <div class="nav-item" onclick="nav('dept',this)" data-dept="PA-Printing"><span class="dept-emoji">🖼️</span>Printing</div>
     <div class="nav-section" style="color:#f8c97e;letter-spacing:.1em">MX — Mexico</div>
@@ -1043,7 +1044,7 @@ document.getElementById('dash-date-label').textContent='Through '+liveDate();
 document.getElementById('preview-date').textContent=liveDate();
 
 // STATE
-const DEPT_EMOJIS={'CA-Production':'🏭','CA-Warehouse':'📦','CA-Printing':'🖼️','PA-Production':'🏭','PA-Manufacturing':'⚙️','PA-Printing':'🖼️','MX-Warehouse':'📦','MX-Printing':'🖼️','MX-Production':'🏭','MX-Manufacturing':'⚙️'};
+const DEPT_EMOJIS={'CA-Production':'🏭','CA-Warehouse':'📦','CA-Printing':'🖼️','PA-Production':'🏭','PA-Warehouse':'📦','PA-Manufacturing':'⚙️','PA-Printing':'🖼️','MX-Warehouse':'📦','MX-Printing':'🖼️','MX-Production':'🏭','MX-Manufacturing':'⚙️'};
 const LOC_FLAGS={'CA':'','PA':'','MX':''};
 
 let DEPARTMENTS=[
@@ -1051,6 +1052,7 @@ let DEPARTMENTS=[
   {id:'CA-Printing',loc:'CA',name:'Printing',assigned:7,completed:6,notCompleted:1,avg:85.7},
   {id:'CA-Warehouse',loc:'CA',name:'Warehouse',assigned:10,completed:9,notCompleted:1,avg:90.0},
   {id:'PA-Production',loc:'PA',name:'Production',assigned:0,completed:0,notCompleted:0,avg:null},
+  {id:'PA-Warehouse',loc:'PA',name:'Warehouse',assigned:0,completed:0,notCompleted:0,avg:null},
   {id:'PA-Manufacturing',loc:'PA',name:'Manufacturing',assigned:0,completed:0,notCompleted:0,avg:null},
   {id:'PA-Printing',loc:'PA',name:'Printing',assigned:0,completed:0,notCompleted:0,avg:null},
   {id:'MX-Warehouse',loc:'MX',name:'Warehouse',assigned:2,completed:2,notCompleted:0,avg:100},
@@ -1139,7 +1141,7 @@ function rebuildLogDeptSelect(){
 }
 
 // ===== RESTORED FUNCTIONS =====
-function getDeptEmoji(id){const m={'CA-Production':'🏭','CA-Warehouse':'📦','CA-Printing':'🖼️','PA-Production':'🏭','PA-Manufacturing':'⚙️','PA-Printing':'🖼️','MX-Warehouse':'📦','MX-Printing':'🖼️','MX-Production':'🏭','MX-Manufacturing':'⚙️'};return DEPT_EMOJIS[id]||m[id]||'🏢';}
+function getDeptEmoji(id){const m={'CA-Production':'🏭','CA-Warehouse':'📦','CA-Printing':'🖼️','PA-Production':'🏭','PA-Warehouse':'📦','PA-Manufacturing':'⚙️','PA-Printing':'🖼️','MX-Warehouse':'📦','MX-Printing':'🖼️','MX-Production':'🏭','MX-Manufacturing':'⚙️'};return DEPT_EMOJIS[id]||m[id]||'🏢';}
 function getLocFlag(loc){return '';}
 
 let senderEmail='';
@@ -1633,7 +1635,7 @@ const EMAILJS_SERVICE_ID  = 'service_i5gpj7b';
 const EMAILJS_TEMPLATE_ID = 'template_nay2z6n';
 const EMAILJS_PUBLIC_KEY  = 'h6xULoX8nMLar-Or8';
 const EMAILJS_SENDER      = 'jose.h@wsdisplay.com';
-const APP_URL             = 'https://wsdisplay-safety.netlify.app';
+const APP_URL             = 'https://joseh-ctrl.github.io/safety-inspector';
 
 // Core sender — accepts structured params matching the EmailJS template variables:
 //   {{subject}}, {{name}}, {{email}}, {{to_email}},
