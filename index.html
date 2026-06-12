@@ -1384,8 +1384,8 @@ function showDetail(id){
     : (t.proof ? '<span style="color:var(--text3);font-size:11px">Photo logged before session - not available for preview</span>' : '<span style="color:var(--red)">No photo</span>');
   const rows=[['Department',t.dept],['Category',t.cat],['Description',t.desc||'--'],['Inspection date',t.date],['Due date',t.due],['Status',statusBadge(t.status)],['Logged by',t.loggedBy||'--'],['Resolved by',t.resolvedBy||'--'],['HR status',t.hrStatus||'--'],['Completion date',t.completedDate||'--'],['Notes',t.notes||'--'],['Photo proof',photoHtml]];
   document.getElementById('detail-body').innerHTML=rows.map(function(r){return '<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><div style="width:130px;flex-shrink:0;color:var(--text3);font-weight:700;font-size:10px;text-transform:uppercase;padding-top:2px">'+r[0]+'</div><div style="color:var(--text);flex:1;line-height:1.5">'+r[1]+'</div></div>';}).join('');
-  // Add reopen button for completed or not_completed tasks
-  if (t.status === 'completed' || t.status === 'not_completed') {
+  // Add reopen button for completed or not_completed tasks — admin/exec only
+  if ((t.status === 'completed' || t.status === 'not_completed') && (currentUserRole === 'admin' || currentUserRole === 'exec')) {
     var reopenDiv = document.createElement('div');
     reopenDiv.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;';
     reopenDiv.innerHTML = '<button class="btn btn-olive" onclick="showReopen('+t.id+')"><i class="ti ti-rotate-clockwise"></i>Reopen Task</button>';
