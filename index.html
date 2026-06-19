@@ -134,6 +134,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margi
 .upload-area.has-file{border-color:var(--green);background:var(--green-light);border-style:solid}
 .upload-area.drag-over{border-color:var(--blue);background:var(--blue-light);border-style:solid;}
 .upload-area i{font-size:22px;color:var(--text3);display:block;margin-bottom:3px}
+.upload-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.upload-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;transition:all .15s}
+.upload-btn:hover{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+.upload-btn.cam{border-color:var(--blue-mid);color:var(--blue)}
+.upload-btn.cam:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+.upload-btn i{font-size:16px;display:inline;margin:0;color:inherit}
+.photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:center}
+.photo-thumb{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;cursor:pointer;display:block}
+.photo-thumb-rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(200,40,40,.92);color:#fff;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.photo-thumb-rm:hover{background:rgba(170,20,20,1)}
+.photo-count{font-size:11px;color:var(--text2);margin-top:6px;font-weight:600}
 
 /* PROGRESS */
 .progress-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
@@ -746,11 +758,17 @@ body.manager-role .nav-item[onclick*="tasks"]{display:none!important;}
     </div>
     <div class="form-group">
       <label class="form-label">Photo Evidence <span style="color:var(--red);font-size:10px">*required</span></label>
-      <div class="upload-area" id="log-upload" onclick="document.getElementById('log-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleFileDrop(event,'log-upload','log-photo-name','log')">
-        <input type="file" id="log-file-input" accept="image/*" style="display:none" onchange="handleFileSelect(this,'log-upload','log-photo-name','log')">
+      <div class="upload-area" id="log-upload" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleFileDrop(event,'log-upload','log-photo-name','log')">
+        <input type="file" id="log-cam-input" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(this,'log-upload','log-photo-name','log')">
+        <input type="file" id="log-file-input" accept="image/*" multiple style="display:none" onchange="handleFileSelect(this,'log-upload','log-photo-name','log')">
         <i class="ti ti-camera-upload"></i>
-        <p id="log-photo-name" style="font-size:11px;color:var(--text3);margin-top:2px">Click to browse or drag & drop photo here</p>
-        <p style="font-size:10px;color:var(--text3);margin-top:2px">JPG, PNG up to 10MB — required</p>
+        <p id="log-photo-name" style="font-size:11px;color:var(--text3);margin-top:2px">Add one or more photos of the issue</p>
+        <div class="upload-btns">
+          <button type="button" class="upload-btn cam" onclick="document.getElementById('log-cam-input').click()"><i class="ti ti-camera"></i>Take Photo</button>
+          <button type="button" class="upload-btn" onclick="document.getElementById('log-file-input').click()"><i class="ti ti-photo-plus"></i>Choose Photos</button>
+        </div>
+        <div class="photo-thumbs" id="log-thumbs"></div>
+        <p style="font-size:10px;color:var(--text3);margin-top:6px">JPG, PNG up to 10MB each — at least one required</p>
       </div>
     </div>
     <div id="log-name-error" style="display:none" class="alert alert-danger"><i class="ti ti-alert-circle"></i>Please enter your name before logging.</div>
@@ -790,10 +808,16 @@ body.manager-role .nav-item[onclick*="tasks"]{display:none!important;}
     <div class="form-group"><label class="form-label">Manager Notes</label><textarea class="form-input" rows="2" placeholder="Describe what was done..."></textarea></div>
     <div class="form-group">
       <label class="form-label">Proof Photo <span style="color:var(--red);font-size:10px">*required</span></label>
-      <div class="upload-area" id="complete-upload" onclick="document.getElementById('complete-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleFileDrop(event,'complete-upload','complete-photo-name','complete')">
-        <input type="file" id="complete-file-input" accept="image/*" style="display:none" onchange="handleFileSelect(this,'complete-upload','complete-photo-name','complete')">
+      <div class="upload-area" id="complete-upload" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleFileDrop(event,'complete-upload','complete-photo-name','complete')">
+        <input type="file" id="complete-cam-input" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(this,'complete-upload','complete-photo-name','complete')">
+        <input type="file" id="complete-file-input" accept="image/*" multiple style="display:none" onchange="handleFileSelect(this,'complete-upload','complete-photo-name','complete')">
         <i class="ti ti-camera-upload"></i>
-        <p id="complete-photo-name" style="font-size:11px;color:var(--text3);margin-top:2px">Click to browse or drag & drop proof photo</p>
+        <p id="complete-photo-name" style="font-size:11px;color:var(--text3);margin-top:2px">Add one or more proof photos</p>
+        <div class="upload-btns">
+          <button type="button" class="upload-btn cam" onclick="document.getElementById('complete-cam-input').click()"><i class="ti ti-camera"></i>Take Photo</button>
+          <button type="button" class="upload-btn" onclick="document.getElementById('complete-file-input').click()"><i class="ti ti-photo-plus"></i>Choose Photos</button>
+        </div>
+        <div class="photo-thumbs" id="complete-thumbs"></div>
       </div>
     </div>
     <div id="complete-name-error" style="display:none" class="alert alert-danger"><i class="ti ti-alert-circle"></i>Please enter your name before marking complete.</div>
@@ -875,7 +899,7 @@ async function dbLoadTasks() {
     photo_url: t.photo_url||null, loggedBy: t.logged_by||'', resolvedBy: t.resolved_by||''
   }));
   // Pre-load photo URLs into taskPhotos for viewing
-  TASKS.forEach(function(t){ if(t.photo_url) taskPhotos[t.id]=t.photo_url; });
+  TASKS.forEach(function(t){ var arr=parsePhotoUrls(t.photo_url); if(arr.length) taskPhotos[t.id]=arr; });
   console.log('Loaded', TASKS.length, 'tasks from database');
 }
 
@@ -1133,9 +1157,28 @@ function getLocFlag(loc){return '';}
 let senderEmail='';
 let currentDept='',currentDeptFilter='all',currentTaskFilter='all',currentTaskId=null;
 let photoUploaded={log:false,complete:false};
-let photoFiles={log:null,complete:null};
-let photoDataUrls={log:null,complete:null};
-const taskPhotos={}; // stores dataUrl by task id after completion
+let photoFiles={log:[],complete:[]};      // arrays of File objects (multi-photo)
+let photoDataUrls={log:[],complete:[]};   // arrays of dataURLs for preview
+const taskPhotos={}; // stores array of photo srcs by task id
+
+// Parse a task's photo_url which may be: null, a single URL string, or a JSON array string
+function parsePhotoUrls(raw){
+  if(!raw) return [];
+  if(Array.isArray(raw)) return raw.filter(Boolean);
+  if(typeof raw==='string'){
+    var s=raw.trim();
+    if(!s) return [];
+    if(s.charAt(0)==='['){ try{ var a=JSON.parse(s); return Array.isArray(a)?a.filter(Boolean):[]; }catch(e){ return [s]; } }
+    return [s];
+  }
+  return [];
+}
+// Return array of photo srcs for a task (prefers locally-cached dataURLs)
+function getTaskPhotoArr(t){
+  var local=taskPhotos[t.id];
+  if(local && local.length) return local;
+  return parsePhotoUrls(t.photo_url);
+}
 
 let NOTIFICATIONS=[];
 let notificationsLoadedFromDB=false;
@@ -1333,8 +1376,10 @@ function taskCard(t){
   const deleteBtn=(currentUserRole==='hr'&&(t.status==='open'||t.status==='pending'))?'<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteTask('+t.id+')" style="margin-left:6px"><i class="ti ti-trash"></i></button>':'';
   const reviewNote=(t.status==='completed'||t.status==='not_completed')?'<span class="tag" style="color:var(--blue);border-color:var(--blue-mid);margin-left:auto;cursor:pointer" onclick="showDetail('+t.id+')"><i class="ti ti-eye"></i>Review</span>':'';
   const descText=t.desc&&t.desc.length>110?t.desc.slice(0,110)+'...':t.desc||'';
-  const photoSrc=taskPhotos[t.id]||t.photo_url||null;
-  const viewPhotoBtn=photoSrc?'<button class="btn btn-sm" onclick="event.stopPropagation();viewTaskPhoto('+t.id+')" style="margin-left:4px;border-color:var(--blue-mid);color:var(--blue)"><i class="ti ti-photo"></i>View photo</button>':'';
+  const photoArr=getTaskPhotoArr(t);
+  const photoSrc=photoArr.length?photoArr[0]:null;
+  const photoLabel=photoArr.length>1?'View '+photoArr.length+' photos':'View photo';
+  const viewPhotoBtn=photoSrc?'<button class="btn btn-sm" onclick="event.stopPropagation();viewTaskPhoto('+t.id+')" style="margin-left:4px;border-color:var(--blue-mid);color:var(--blue)"><i class="ti ti-photo"></i>'+photoLabel+'</button>':'';
   return '<div class="task-item '+sc+'" '+clickable+'><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">'+getDeptEmoji(t.dept)+' '+t.cat+' <span style="font-weight:400;color:var(--text3);font-size:11px">-- '+t.dept+'</span></div><div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.5">'+descText+'</div></div>'+statusBadge(t.status)+'</div><div class="task-meta"><span class="tag"><i class="ti ti-calendar"></i>'+t.date+'</span><span class="tag"><i class="ti ti-clock"></i>Due '+t.due+'</span>'+(t.proof?'<span class="tag" style="color:var(--green);border-color:#a8d5b0"><i class="ti ti-photo"></i>Photo on file</span>':'')+resolveBtn+deleteBtn+viewPhotoBtn+reviewNote+'</div></div>';
 }
 
@@ -1379,9 +1424,13 @@ function renderDeptView(dept,filter){
 function showDetail(id){
   const t=TASKS.find(function(x){return x.id===id;});if(!t)return;
   document.getElementById('detail-title').innerHTML='<i class="ti ti-file-description"></i>'+getDeptEmoji(t.dept)+' '+t.cat+' -- '+t.dept;
-  const photoHtml = taskPhotos[t.id]
-    ? '<div style="margin-top:6px"><img src="'+taskPhotos[t.id]+'" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:contain;cursor:pointer;border:1px solid var(--border)" onclick="showImageModal(this.src)" title="Click to view full size"><br><button class="btn btn-xs btn-olive" style="margin-top:6px" onclick="replacePhoto('+t.id+')"><i class="ti ti-refresh"></i> Replace photo</button></div>'
-    : (t.proof ? '<span style="color:var(--text3);font-size:11px">Photo logged before session - not available for preview</span>' : '<span style="color:var(--red)">No photo</span>');
+  const detailPhotos = getTaskPhotoArr(t);
+  const photoHtml = detailPhotos.length
+    ? '<div style="margin-top:6px"><div style="display:flex;flex-wrap:wrap;gap:6px">'
+        + detailPhotos.map(function(src){ return '<img src="'+src+'" style="width:96px;height:96px;border-radius:8px;object-fit:cover;cursor:pointer;border:1px solid var(--border)" onclick="showImageModal(\''+src+'\')" title="Click to view full size">'; }).join('')
+        + '</div><button class="btn btn-xs btn-olive" style="margin-top:8px" onclick="addTaskPhotos('+t.id+')"><i class="ti ti-photo-plus"></i> Add photos</button></div>'
+    : (t.proof ? '<span style="color:var(--text3);font-size:11px">Photo logged before session - not available for preview</span> <button class="btn btn-xs btn-olive" style="margin-left:6px" onclick="addTaskPhotos('+t.id+')"><i class="ti ti-photo-plus"></i> Add photos</button>'
+               : '<span style="color:var(--red)">No photo</span> <button class="btn btn-xs btn-olive" style="margin-left:6px" onclick="addTaskPhotos('+t.id+')"><i class="ti ti-photo-plus"></i> Add photos</button>');
   const rows=[['Department',t.dept],['Category',t.cat],['Description',t.desc||'--'],['Inspection date',t.date],['Due date',t.due],['Status',statusBadge(t.status)],['Logged by',t.loggedBy||'--'],['Resolved by',t.resolvedBy||'--'],['HR status',t.hrStatus||'--'],['Completion date',t.completedDate||'--'],['Notes',t.notes||'--'],['Photo proof',photoHtml]];
   document.getElementById('detail-body').innerHTML=rows.map(function(r){return '<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><div style="width:130px;flex-shrink:0;color:var(--text3);font-weight:700;font-size:10px;text-transform:uppercase;padding-top:2px">'+r[0]+'</div><div style="color:var(--text);flex:1;line-height:1.5">'+r[1]+'</div></div>';}).join('');
   // Add reopen button for completed or not_completed tasks — admin/exec only
@@ -1565,51 +1614,64 @@ function rebuildSidebar(){
 // ===== END RESTORED FUNCTIONS =====
 
 function viewTaskPhoto(id) {
-  const src = taskPhotos[id] || (TASKS.find(function(t){return t.id===id;}) || {}).photo_url;
-  if (src) { showImageModal(src); }
+  const t = TASKS.find(function(x){return x.id===id;}) || {};
+  const arr = getTaskPhotoArr(t);
+  if (arr.length) { showImageModal(arr); }
   else { showToast('Photo not available.', 'danger'); }
 }
 
+// Open a single in-progress (not-yet-saved) photo from the upload thumbnails
+function showLocalPhoto(key, index) {
+  const src = photoDataUrls[key] && photoDataUrls[key][index];
+  if (src) showImageModal(src);
+}
+
+// Accepts a single src string OR an array of srcs and shows them in a lightbox gallery
 function showImageModal(src) {
+  const arr = Array.isArray(src) ? src.filter(Boolean) : (src ? [src] : []);
+  if (!arr.length) return;
   let overlay = document.getElementById('image-lightbox');
   if (!overlay) {
     overlay = document.createElement('div');
     overlay.id = 'image-lightbox';
-    overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:pointer;';
+    overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:pointer;padding:20px;overflow:auto;';
     overlay.onclick = function() { this.style.display='none'; };
-    overlay.innerHTML = '<img id="lightbox-img" style="max-width:90vw;max-height:80vh;border-radius:10px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,0.5)"><div style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:8px">Click anywhere to close</div>';
     document.body.appendChild(overlay);
   }
-  document.getElementById('lightbox-img').src = src;
+  const imgs = arr.map(function(s){
+    return '<img src="'+s+'" style="max-width:90vw;max-height:80vh;border-radius:10px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,0.5)">';
+  }).join('');
+  const counter = arr.length>1 ? '<div style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:600">'+arr.length+' photos</div>' : '';
+  overlay.innerHTML = counter + imgs + '<div style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:4px">Click anywhere to close</div>';
   overlay.style.display = 'flex';
 }
 
-function replacePhoto(taskId) {
+// Append one or more new photos to an existing task (works for any user/role)
+function addTaskPhotos(taskId) {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
+  input.multiple = true;
   input.onchange = function() {
-    const file = this.files[0];
-    if (!file) return;
-    if (file.size > 10*1024*1024) { showToast('File too large. Max 10MB.','danger'); return; }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      taskPhotos[taskId] = e.target.result;
-      showToast('Uploading replacement photo...','info');
-      uploadPhotoToStorage(file, taskId, 'replace').then(function(photoUrl){
-        if(photoUrl){
-          dbUpdateTaskPhoto(taskId, photoUrl);
-          const t=TASKS.find(function(x){return x.id===taskId;});
-          if(t) t.photo_url=photoUrl;
-          showToast('Photo replaced and saved permanently!','success');
-        } else {
-          showToast('Photo replaced locally (upload failed).','danger');
-        }
-        closeModal('modal-detail');
-        setTimeout(function(){ showDetail(taskId); }, 100);
-      });
-    };
-    reader.readAsDataURL(file);
+    const files = Array.from(this.files || []).filter(function(f){
+      if (f.size > 10*1024*1024) { showToast('Skipped "'+f.name+'" — over 10MB.','danger'); return false; }
+      return f.type && f.type.startsWith('image/');
+    });
+    if (!files.length) return;
+    const t = TASKS.find(function(x){return x.id===taskId;});
+    const existing = getTaskPhotoArr(t || {}).slice();
+    showToast('Uploading '+files.length+' photo'+(files.length>1?'s':'')+'...','info');
+    Promise.all(files.map(function(f){ return uploadPhotoToStorage(f, taskId, 'add'); })).then(function(urls){
+      const newUrls = urls.filter(Boolean);
+      if (!newUrls.length) { showToast('Photo upload failed.','danger'); return; }
+      const all = existing.concat(newUrls);
+      taskPhotos[taskId] = all;
+      if (t) t.photo_url = JSON.stringify(all);
+      dbUpdateTaskPhoto(taskId, JSON.stringify(all));
+      showToast('Added '+newUrls.length+' photo'+(newUrls.length>1?'s':'')+'.','success');
+      closeModal('modal-detail');
+      setTimeout(function(){ showDetail(taskId); }, 100);
+    });
   };
   input.click();
 }
@@ -2464,123 +2526,93 @@ function showNotifModal(){
   document.getElementById('modal-notif').style.display='flex';
 }
 
-// UPLOAD / RESOLVE
+// UPLOAD / RESOLVE — multi-photo support (camera + library)
+// Accepts one OR many files from a file/camera input and APPENDS them to the
+// existing set for this key ('log' or 'complete'). Each photo is previewed as a
+// removable thumbnail. Both inputs (camera-capture and library multi-select)
+// route here, so taking several photos one-by-one accumulates naturally.
 function handleFileSelect(input, areaId, nameId, key) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 10 * 1024 * 1024) { showToast('File too large. Max 10MB.', 'danger'); return; }
-  photoUploaded[key] = true;
-  photoFiles[key] = file;
-  document.getElementById(areaId).classList.add('has-file');
-  document.getElementById(areaId).classList.remove('drag-over');
-  const el = document.getElementById(nameId);
-  el.textContent = '✅ ' + file.name + ' (' + (file.size/1024).toFixed(0) + 'KB)';
-  el.style.color = 'var(--green)';
-  // Show preview
-  const reader = new FileReader();
-  reader.onload = e => {
-    let preview = document.getElementById(areaId + '-preview');
-    if (!preview) { preview = document.createElement('img'); preview.id = areaId+'-preview'; preview.style.cssText='max-width:100%;max-height:120px;margin-top:8px;border-radius:8px;object-fit:cover;'; document.getElementById(areaId).appendChild(preview); }
-    preview.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  const files = input && input.files ? Array.from(input.files) : [];
+  addPhotoFiles(files, areaId, nameId, key);
+  // Reset the input value so re-selecting the same file/another camera shot still fires onchange
+  if (input && 'value' in input) { try { input.value = ''; } catch(e){} }
 }
 
 function handleFileDrop(event, areaId, nameId, key) {
   event.preventDefault();
   document.getElementById(areaId).classList.remove('drag-over');
-  const file = event.dataTransfer.files[0];
-  if (!file || !file.type.startsWith('image/')) { showToast('Please drop an image file.', 'danger'); return; }
-  const fakeInput = { files: [file] };
-  handleFileSelect(fakeInput, areaId, nameId, key);
+  const files = event.dataTransfer && event.dataTransfer.files ? Array.from(event.dataTransfer.files) : [];
+  addPhotoFiles(files, areaId, nameId, key);
 }
 
-// Legacy simulateUpload removed - now uses real file input
-function clearUpload(areaId, nameId, inputId, key) {
-  photoUploaded[key] = false;
-  photoFiles[key] = null;
-  const input = document.getElementById(inputId);
-  if (input) input.value = '';
-  const area = document.getElementById(areaId);
-  area.classList.remove('has-file','drag-over');
-  const nameEl = document.getElementById(nameId);
-  nameEl.textContent = key==='log' ? 'Click to browse files or drag & drop photo here' : 'Click to browse or drag & drop proof photo here';
-  nameEl.style.color = '';
-  const prev = document.getElementById(areaId+'-prev');
-  if (prev) prev.remove();
-  const clearBtn = document.getElementById(areaId+'-clear');
-  if (clearBtn) clearBtn.remove();
-}
-
-function handleFileSelect(input, areaId, nameId, key) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 10 * 1024 * 1024) { showToast('File too large. Max 10MB.', 'danger'); return; }
-  if (!file.type.startsWith('image/')) { showToast('Please select an image file.', 'danger'); return; }
-  photoUploaded[key] = true;
-  photoFiles[key] = file;
-  const area = document.getElementById(areaId);
-  area.classList.add('has-file');
-  area.classList.remove('drag-over');
-  const nameEl = document.getElementById(nameId);
-  nameEl.textContent = '✅ ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
-  nameEl.style.color = 'var(--green)';
-  const inputId = areaId==='log-upload'?'log-file-input':'complete-file-input';
-  // Add clear/replace button
-  let clearBtn = document.getElementById(areaId+'-clear');
-  if (!clearBtn) {
-    clearBtn = document.createElement('button');
-    clearBtn.id = areaId+'-clear';
-    clearBtn.className = 'btn btn-xs btn-danger';
-    clearBtn.style.cssText = 'margin-top:8px;display:flex;align-items:center;gap:4px;';
-    clearBtn.innerHTML = '<i class="ti ti-trash"></i> Remove & replace photo';
-    clearBtn.onclick = function(e) { e.stopPropagation(); clearUpload(areaId, nameId, inputId, key); };
-    area.appendChild(clearBtn);
+function addPhotoFiles(files, areaId, nameId, key) {
+  if (!files.length) return;
+  let added = 0;
+  files.forEach(function(file){
+    if (!file.type || !file.type.startsWith('image/')) { showToast('Skipped a non-image file.', 'danger'); return; }
+    if (file.size > 10 * 1024 * 1024) { showToast('Skipped "' + file.name + '" — over 10MB.', 'danger'); return; }
+    photoFiles[key].push(file);
+    const idx = photoFiles[key].length - 1;
+    photoDataUrls[key].push('');
+    // Read preview asynchronously, then re-render thumbnails
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      photoDataUrls[key][idx] = e.target.result;
+      renderPhotoThumbs(key, areaId, nameId);
+    };
+    reader.readAsDataURL(file);
+    added++;
+  });
+  if (added) {
+    photoUploaded[key] = true;
+    renderPhotoThumbs(key, areaId, nameId);
   }
-  // Show preview
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    let prev = document.getElementById(areaId+'-prev');
-    if (!prev) {
-      prev = document.createElement('img');
-      prev.id = areaId+'-prev';
-      prev.style.cssText = 'max-width:100%;max-height:120px;margin-top:8px;border-radius:6px;object-fit:cover;display:block;cursor:pointer;';
-      prev.title = 'Click to view full size';
-      prev.onclick = function(ev) { ev.stopPropagation(); showImageModal(this.src, file.name); };
-      area.appendChild(prev);
-    }
-    prev.src = e.target.result;
-    // Store data URL for later viewing in task detail
-    photoDataUrls[key] = e.target.result;
-  };
-  reader.readAsDataURL(file);
 }
 
-function handleFileDrop(event, areaId, nameId, key) {
-  event.preventDefault();
-  document.getElementById(areaId).classList.remove('drag-over');
-  const file = event.dataTransfer.files[0];
-  if (!file || !file.type.startsWith('image/')) { showToast('Please drop an image file.', 'danger'); return; }
-  handleFileSelect({files:[file]}, areaId, nameId, key);
+function renderPhotoThumbs(key, areaId, nameId) {
+  const area = document.getElementById(areaId);
+  const thumbs = document.getElementById(key + '-thumbs');
+  const nameEl = nameId ? document.getElementById(nameId) : null;
+  const files = photoFiles[key] || [];
+  if (!thumbs) return;
+  thumbs.innerHTML = files.map(function(f, i){
+    const src = photoDataUrls[key][i] || '';
+    const img = src ? '<img src="'+src+'" onclick="event.stopPropagation();showLocalPhoto(\''+key+'\','+i+')" title="Click to view full size">' : '';
+    return '<div class="photo-thumb">'+img+'<button type="button" class="photo-thumb-rm" title="Remove" onclick="event.stopPropagation();removePhoto(\''+key+'\','+i+',\''+areaId+'\',\''+(nameId||'')+'\')">&times;</button></div>';
+  }).join('');
+  if (files.length) {
+    area.classList.add('has-file');
+    if (nameEl) { nameEl.textContent = '✅ ' + files.length + ' photo' + (files.length>1?'s':'') + ' added'; nameEl.style.color = 'var(--green)'; }
+  } else {
+    area.classList.remove('has-file');
+    if (nameEl) { nameEl.textContent = key==='log' ? 'Add one or more photos of the issue' : 'Add one or more proof photos'; nameEl.style.color = ''; }
+  }
+}
+
+function removePhoto(key, index, areaId, nameId) {
+  photoFiles[key].splice(index, 1);
+  photoDataUrls[key].splice(index, 1);
+  photoUploaded[key] = photoFiles[key].length > 0;
+  renderPhotoThumbs(key, areaId, nameId || (key==='log'?'log-photo-name':'complete-photo-name'));
+}
+
+// Reset all photos for a key and clear thumbnails/inputs
+function clearUpload(key, areaId, nameId) {
+  photoUploaded[key] = false;
+  photoFiles[key] = [];
+  photoDataUrls[key] = [];
+  ['-cam-input','-file-input'].forEach(function(suf){
+    const inp = document.getElementById(key + suf);
+    if (inp) { try { inp.value = ''; } catch(e){} }
+  });
+  const area = document.getElementById(areaId);
+  if (area) area.classList.remove('has-file','drag-over');
+  renderPhotoThumbs(key, areaId, nameId);
 }
 
 function showLog(){
-  // Reset photo state
-  photoUploaded.log=false;
-  photoFiles.log=null;
-  photoDataUrls.log=null;
-  // Clear file input
-  const li=document.getElementById('log-file-input');if(li)li.value='';
-  // Remove any preview images and clear buttons added to upload area
-  const logArea=document.getElementById('log-upload');
-  if(logArea){
-    Array.from(logArea.children).forEach(function(child){
-      if(child.tagName==='IMG'||child.tagName==='BUTTON'){child.remove();}
-    });
-    logArea.classList.remove('has-file','drag-over');
-  }
-  document.getElementById('log-photo-name').textContent='Click to browse files or drag & drop photo here';
-  document.getElementById('log-photo-name').style.color='';
+  // Reset photo state (clears arrays, inputs, and thumbnails)
+  clearUpload('log','log-upload','log-photo-name');
   // Clear ALL text fields
   const descTa=document.querySelector('#modal-log textarea');if(descTa)descTa.value='';
   const lby=document.getElementById('log-logged-by');if(lby)lby.value=getCurrentUserName();
@@ -2601,11 +2633,7 @@ function showResolve(id){currentTaskId=id;document.getElementById('modal-resolve
 function pickResolution(type){
   closeModal('modal-resolve');
   if(type==='complete'){
-    photoUploaded.complete=false;
-    document.getElementById('complete-upload').classList.remove('has-file');
-    document.getElementById('complete-photo-name').textContent='Click to browse or drag & drop proof photo';
-    document.getElementById('complete-photo-name').style.color='';
-    document.getElementById('complete-file-input').value='';
+    clearUpload('complete','complete-upload','complete-photo-name');
     document.getElementById('complete-error').style.display='none';
     document.getElementById('complete-name-error').style.display='none';
     document.getElementById('complete-date-input').value=liveISO();
@@ -2638,16 +2666,17 @@ function submitTask(){
   const nextId=TASKS.length?Math.max(...TASKS.map(function(t){return t.id;}))+1:1;
   const newTask={id:nextId,dept:dept,cat:cat,desc:desc,date:date,due:due,status:'open',proof:true,completedDate:'',notes:'Logged with initial photo evidence.',hrStatus:'In Progress',loggedBy:loggedBy,resolvedBy:''};
   TASKS.push(newTask);
-  if(photoDataUrls.log) taskPhotos[nextId]=photoDataUrls.log;
-  const logFile=photoFiles.log;
-  const logPreviewUrl=photoDataUrls.log;
-  photoDataUrls.log=null;
+  const logPreviewUrls=(photoDataUrls.log||[]).slice();
+  const logFiles=(photoFiles.log||[]).slice();
+  if(logPreviewUrls.length) taskPhotos[nextId]=logPreviewUrls;
+  photoDataUrls.log=[];
   dbAddTask(newTask).then(function(data){
     const realId=data&&data[0]?data[0].id:nextId;
-    if(realId!==nextId){newTask.id=realId;if(logPreviewUrl)taskPhotos[realId]=logPreviewUrl;}
-    if(logFile){
-      uploadPhotoToStorage(logFile,realId,'log').then(function(photoUrl){
-        if(photoUrl){dbUpdateTaskPhoto(realId,photoUrl);newTask.photo_url=photoUrl;console.log('Photo uploaded:',photoUrl);}
+    if(realId!==nextId){newTask.id=realId;if(logPreviewUrls.length)taskPhotos[realId]=logPreviewUrls;}
+    if(logFiles.length){
+      Promise.all(logFiles.map(function(f){return uploadPhotoToStorage(f,realId,'log');})).then(function(urls){
+        const ok=urls.filter(Boolean);
+        if(ok.length){const val=JSON.stringify(ok);dbUpdateTaskPhoto(realId,val);newTask.photo_url=val;taskPhotos[realId]=ok;console.log('Uploaded',ok.length,'log photos');}
       });
     }
   });
@@ -2683,14 +2712,15 @@ function confirmComplete(){
   document.getElementById('complete-error').style.display='none';
   const t=TASKS.find(function(x){return x.id===currentTaskId;});
   if(t){t.status='completed';t.proof=true;t.completedDate=document.getElementById('complete-date-input').value||liveISO();t.hrStatus='Completed';t.notes='Completed with photo proof.';t.resolvedBy=resolvedBy;
-    if(photoDataUrls.complete) taskPhotos[t.id]=photoDataUrls.complete;
-    const proofFile=photoFiles.complete;
-    const proofPreview=photoDataUrls.complete;
-    photoDataUrls.complete=null;
+    const proofPreviews=(photoDataUrls.complete||[]).slice();
+    const proofFiles=(photoFiles.complete||[]).slice();
+    if(proofPreviews.length) taskPhotos[t.id]=proofPreviews;
+    photoDataUrls.complete=[];
     dbUpdateTask(t).then(function(){
-      if(proofFile){
-        uploadPhotoToStorage(proofFile,t.id,'proof').then(function(photoUrl){
-          if(photoUrl){dbUpdateTaskPhoto(t.id,photoUrl);t.photo_url=photoUrl;console.log('Proof photo uploaded:',photoUrl);}
+      if(proofFiles.length){
+        Promise.all(proofFiles.map(function(f){return uploadPhotoToStorage(f,t.id,'proof');})).then(function(urls){
+          const ok=urls.filter(Boolean);
+          if(ok.length){const val=JSON.stringify(ok);dbUpdateTaskPhoto(t.id,val);t.photo_url=val;taskPhotos[t.id]=ok;console.log('Uploaded',ok.length,'proof photos');}
         });
       }
     });}
