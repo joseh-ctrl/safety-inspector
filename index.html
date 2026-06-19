@@ -146,6 +146,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);margi
 .photo-thumb-rm{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(200,40,40,.92);color:#fff;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .photo-thumb-rm:hover{background:rgba(170,20,20,1)}
 .photo-count{font-size:11px;color:var(--text2);margin-top:6px;font-weight:600}
+/* In-app camera (getUserMedia) — keeps the user inside the app, no reload/logout */
+.cam-modal{display:none;position:fixed;inset:0;z-index:600;background:#000;flex-direction:column;align-items:center;justify-content:center}
+.cam-stage{flex:1;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.cam-stage video,.cam-stage img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:#000}
+.cam-count{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none;z-index:2}
+.cam-controls{width:100%;padding:18px 20px calc(18px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;gap:16px;background:#000}
+.cam-controls.center{justify-content:center}
+.cam-shutter{width:66px;height:66px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.45);cursor:pointer;flex-shrink:0;transition:transform .1s;padding:0}
+.cam-shutter:active{transform:scale(.92)}
+.cam-btn{padding:11px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:14px;font-weight:600;cursor:pointer;min-width:88px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.cam-btn.primary{background:var(--green);border-color:var(--green)}
+.cam-btn i{font-size:18px}
 
 /* PROGRESS */
 .progress-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
@@ -764,7 +776,7 @@ body.manager-role .nav-item[onclick*="tasks"]{display:none!important;}
         <i class="ti ti-camera-upload"></i>
         <p id="log-photo-name" style="font-size:11px;color:var(--text3);margin-top:2px">Add one or more photos of the issue</p>
         <div class="upload-btns">
-          <button type="button" class="upload-btn cam" onclick="document.getElementById('log-cam-input').click()"><i class="ti ti-camera"></i>Take Photo</button>
+          <button type="button" class="upload-btn cam" onclick="openCamera('log')"><i class="ti ti-camera"></i>Take Photo</button>
           <button type="button" class="upload-btn" onclick="document.getElementById('log-file-input').click()"><i class="ti ti-photo-plus"></i>Choose Photos</button>
         </div>
         <div class="photo-thumbs" id="log-thumbs"></div>
@@ -814,7 +826,7 @@ body.manager-role .nav-item[onclick*="tasks"]{display:none!important;}
         <i class="ti ti-camera-upload"></i>
         <p id="complete-photo-name" style="font-size:11px;color:var(--text3);margin-top:2px">Add one or more proof photos</p>
         <div class="upload-btns">
-          <button type="button" class="upload-btn cam" onclick="document.getElementById('complete-cam-input').click()"><i class="ti ti-camera"></i>Take Photo</button>
+          <button type="button" class="upload-btn cam" onclick="openCamera('complete')"><i class="ti ti-camera"></i>Take Photo</button>
           <button type="button" class="upload-btn" onclick="document.getElementById('complete-file-input').click()"><i class="ti ti-photo-plus"></i>Choose Photos</button>
         </div>
         <div class="photo-thumbs" id="complete-thumbs"></div>
@@ -2341,6 +2353,7 @@ function attemptLogin() {
   }
 
   hideLoginScreen();
+  try { localStorage.setItem('safetyUserEmail', currentUserEmail); } catch(e){}
   applyRoleUI();
   initFromDB();
 }
@@ -2409,6 +2422,7 @@ function applyRoleUI() {
 }
 
 function logout() {
+  try { localStorage.removeItem('safetyUserEmail'); } catch(e){}
   currentUserEmail = '';
   currentUserRole = '';
   currentUserDept = '';
@@ -2610,6 +2624,127 @@ function clearUpload(key, areaId, nameId) {
   renderPhotoThumbs(key, areaId, nameId);
 }
 
+// ===== IN-APP CAMERA (getUserMedia) =====
+// Opens the camera INSIDE the app so the page is never backgrounded/discarded by
+// the OS (which on phones reloads the page on return, logging the user out and
+// losing the in-progress photo). Falls back to the native capture input if the
+// browser can't grant a live camera stream.
+let camStream=null, camKey=null, camFacing='environment', camShotCount=0;
+
+function ensureCamModal(){
+  let m=document.getElementById('cam-modal');
+  if(m) return m;
+  m=document.createElement('div');
+  m.id='cam-modal';
+  m.className='cam-modal';
+  m.innerHTML =
+    '<div class="cam-count" id="cam-count">Tap the shutter to capture</div>'+
+    '<div class="cam-stage">'+
+      '<video id="cam-video" autoplay playsinline muted></video>'+
+      '<canvas id="cam-canvas" style="display:none"></canvas>'+
+      '<img id="cam-still" alt="" style="display:none">'+
+    '</div>'+
+    '<div class="cam-controls" id="cam-controls-live">'+
+      '<button type="button" class="cam-btn" onclick="closeCamera()"><i class="ti ti-check"></i><span id="cam-done-label">Cancel</span></button>'+
+      '<button type="button" class="cam-shutter" onclick="captureFrame()" aria-label="Capture photo"></button>'+
+      '<button type="button" class="cam-btn" onclick="switchCamera()"><i class="ti ti-refresh"></i>Flip</button>'+
+    '</div>'+
+    '<div class="cam-controls center" id="cam-controls-review" style="display:none">'+
+      '<button type="button" class="cam-btn" onclick="retakeShot()">Retake</button>'+
+      '<button type="button" class="cam-btn primary" onclick="useShot()"><i class="ti ti-check"></i>Use Photo</button>'+
+    '</div>';
+  document.body.appendChild(m);
+  return m;
+}
+
+function camFallback(){
+  const inp=document.getElementById((camKey||'log')+'-cam-input');
+  if(inp) inp.click();
+}
+
+async function openCamera(key){
+  camKey=key; camShotCount=0; camFacing='environment';
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    camFallback(); return;
+  }
+  ensureCamModal().style.display='flex';
+  showCamLive();
+  await startCamStream();
+}
+
+async function startCamStream(){
+  stopCamStream();
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:camFacing}},audio:false});
+    const v=document.getElementById('cam-video');
+    v.srcObject=camStream;
+    try{ await v.play(); }catch(e){}
+  }catch(err){
+    console.error('Camera error',err);
+    closeCamera();
+    showToast('Could not open the in-app camera — opening photo picker instead.','info');
+    camFallback();
+  }
+}
+
+function stopCamStream(){
+  if(camStream){ camStream.getTracks().forEach(function(t){t.stop();}); camStream=null; }
+}
+
+function showCamLive(){
+  const v=document.getElementById('cam-video'), s=document.getElementById('cam-still');
+  if(v) v.style.display='';
+  if(s){ s.style.display='none'; s.src=''; }
+  const lc=document.getElementById('cam-controls-live'), rc=document.getElementById('cam-controls-review');
+  if(lc) lc.style.display='flex';
+  if(rc) rc.style.display='none';
+  updateCamCount();
+}
+
+function captureFrame(){
+  const v=document.getElementById('cam-video');
+  if(!v || !v.videoWidth){ showToast('Camera still starting…','info'); return; }
+  const c=document.getElementById('cam-canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  const still=document.getElementById('cam-still');
+  still.src=c.toDataURL('image/jpeg',0.9);
+  v.style.display='none'; still.style.display='';
+  document.getElementById('cam-controls-live').style.display='none';
+  document.getElementById('cam-controls-review').style.display='flex';
+}
+
+function retakeShot(){ showCamLive(); }
+
+function useShot(){
+  const c=document.getElementById('cam-canvas');
+  c.toBlob(function(blob){
+    if(!blob){ showToast('Capture failed — try again.','danger'); showCamLive(); return; }
+    const f=new File([blob],'camera-'+Date.now()+'.jpg',{type:'image/jpeg'});
+    addPhotoFiles([f], camKey+'-upload', camKey+'-photo-name', camKey);
+    camShotCount++;
+    showCamLive(); // back to live view so they can keep shooting
+  },'image/jpeg',0.9);
+}
+
+function switchCamera(){
+  camFacing = camFacing==='environment' ? 'user' : 'environment';
+  startCamStream();
+}
+
+function updateCamCount(){
+  const cnt=document.getElementById('cam-count');
+  if(cnt) cnt.textContent = camShotCount ? (camShotCount+' photo'+(camShotCount>1?'s':'')+' added — keep shooting or press Done') : 'Tap the shutter to capture';
+  const lbl=document.getElementById('cam-done-label');
+  if(lbl) lbl.textContent = camShotCount ? 'Done ('+camShotCount+')' : 'Cancel';
+}
+
+function closeCamera(){
+  stopCamStream();
+  const m=document.getElementById('cam-modal');
+  if(m) m.style.display='none';
+}
+
 function showLog(){
   // Reset photo state (clears arrays, inputs, and thumbnails)
   clearUpload('log','log-upload','log-photo-name');
@@ -2776,6 +2911,23 @@ async function preloadSettingsForLogin() {
     console.error('Settings load error:', e);
   }
   if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+
+  // Auto-restore a previous session so a page reload (e.g. returning from the
+  // camera on mobile, or an accidental refresh) doesn't force a re-login.
+  var savedEmail = '';
+  try { savedEmail = localStorage.getItem('safetyUserEmail') || ''; } catch(e){}
+  if (savedEmail) {
+    var role = getUserRole(savedEmail);
+    if (role) {
+      currentUserEmail = savedEmail;
+      if (role === 'hr') { currentUserRole = 'hr'; currentUserDept = ''; }
+      else { currentUserRole = 'manager'; currentUserDept = role.replace('manager:', ''); }
+      hideLoginScreen();
+      applyRoleUI();
+      initFromDB();
+      return;
+    }
+  }
   showLoginScreen();
 }
 preloadSettingsForLogin();
