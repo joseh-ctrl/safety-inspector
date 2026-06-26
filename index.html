@@ -1956,29 +1956,45 @@ async function sendRealReminders() {
 // ===== MONTHLY REPORT =====
 const LEADERSHIP_EMAILS = ['manny@wsdisplay.com','zachary@wsdisplay.com','rafael@wsdisplay.com','jose.h@wsdisplay.com','anahi@wsdisplay.com','stephanie.b@wsdisplay.com','lyvania@wsdisplay.com'];
 
-const REPORT_SCHEDULE = {
-  '2026-06-12': 'May 2026',
-  '2026-07-10': 'June 2026',
-  '2026-08-07': 'July 2026',
-  '2026-09-04': 'August 2026',
-  '2026-10-16': 'September 2026',
-  '2026-11-13': 'October 2026',
-  '2026-12-11': 'November 2026'
-};
+const REPORT_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-const MONTH_MAP = {
-  'May 2026': 4, 'June 2026': 5, 'July 2026': 6,
-  'August 2026': 7, 'September 2026': 8, 'October 2026': 9,
-  'November 2026': 10
-};
+// Build a rolling list of recent months for the report picker, newest first.
+// index 0 = current month, index 1 = previous month (the default report target), etc.
+function getReportMonthOptions(count) {
+  count = count || 13;
+  var now = new Date();
+  var opts = [];
+  for (var i = 0; i < count; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var y = d.getFullYear(), m = d.getMonth();
+    opts.push({ key: y + '-' + String(m + 1).padStart(2, '0'), label: REPORT_MONTH_NAMES[m] + ' ' + y, y: y, m: m });
+  }
+  return opts;
+}
 
-function getMonthlyStats(monthIndex) {
-  // monthIndex: 0=Jan, 4=May, etc.
+// The month a report should default to: the PREVIOUS calendar month.
+// You inspect on the 7th & 21st and send after the following 7th-of-month inspection,
+// so last month's tasks (due by the 7th) are finalized by the time you send.
+function getDefaultReportMonthKey() {
+  var now = new Date();
+  var d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function parseReportMonthKey(key) {
+  var parts = String(key).split('-');
+  var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10) - 1;
+  return { y: y, m: m, label: (REPORT_MONTH_NAMES[m] || '?') + ' ' + y };
+}
+
+// Year-aware so e.g. June 2025 and June 2026 never merge. Groups by INSPECTION date (t.date).
+function getMonthlyStats(year, monthIndex) {
   var result = [];
   var totalAssigned = 0, totalCompleted = 0;
   DEPARTMENTS.forEach(function(d) {
     var dTasks = TASKS.filter(function(t) {
-      return t.dept === d.id && new Date(t.date + 'T00:00:00').getMonth() === monthIndex;
+      var dt = new Date((t.date || '') + 'T00:00:00');
+      return t.dept === d.id && dt.getFullYear() === year && dt.getMonth() === monthIndex;
     });
     var comp = dTasks.filter(function(t) { return t.status === 'completed'; }).length;
     var pct = dTasks.length ? (comp / dTasks.length * 100) : null;
@@ -2041,13 +2057,14 @@ function buildMonthlyReportHtml(monthLabel, stats) {
     '</div></div>';
 }
 
-async function sendMonthlyReport(monthLabel) {
-  var monthIndex = MONTH_MAP[monthLabel];
-  if (monthIndex === undefined) { showToast('Month not found.', 'danger'); return; }
-  var stats = getMonthlyStats(monthIndex);
-  if (!stats.totalAssigned) { 
-    if (!confirm('No tasks found for ' + monthLabel + '. Send the report anyway?')) return; 
+async function sendMonthlyReport(monthKey) {
+  var p = parseReportMonthKey(monthKey);
+  if (isNaN(p.y) || isNaN(p.m)) { showToast('Month not found.', 'danger'); return; }
+  var stats = getMonthlyStats(p.y, p.m);
+  if (!stats.totalAssigned) {
+    if (!confirm('No tasks found for ' + p.label + '. Send the report anyway?')) return;
   }
+  var monthLabel = p.label;
 
   // Collect all recipients: leadership + all manager emails
   var allRecipients = LEADERSHIP_EMAILS.slice();
@@ -2073,35 +2090,15 @@ async function sendMonthlyReport(monthLabel) {
 
 
 function previewMonthlyReport() {
-  // Use most recent month that has data
-  var monthsWithData = new Set();
-  TASKS.forEach(function(t) { monthsWithData.add(new Date(t.date + 'T00:00:00').getMonth()); });
-  // Find the most recent month label with data
-  var monthLabel = null;
-  var MONTH_NAMES_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  Object.keys(REPORT_SCHEDULE).forEach(function(date) {
-    var label = REPORT_SCHEDULE[date];
-    var mIdx = MONTH_MAP[label];
-    if (mIdx !== undefined && monthsWithData.has(mIdx)) monthLabel = label;
-  });
-  // Fall back to May 2026 if nothing matches
-  if (!monthLabel) {
-    // find any month with tasks
-    var mIdx = [...monthsWithData].sort(function(a,b){return b-a;})[0];
-    if (mIdx !== undefined) monthLabel = MONTH_NAMES_FULL[mIdx] + ' 2026';
-  }
-  if (!monthLabel) { showToast('No task data to preview.', 'danger'); return; }
-
-  var mIdx = MONTH_MAP[monthLabel];
-  if (mIdx === undefined) {
-    // parse manually
-    mIdx = ['January','February','March','April','May','June','July','August','September','October','November','December'].indexOf(monthLabel.split(' ')[0]);
-  }
-  var stats = getMonthlyStats(mIdx);
-  var html = buildMonthlyReportHtml(monthLabel, stats);
+  // Use the month chosen in the modal if it's open, otherwise default to last month.
+  var sel = document.getElementById('monthly-report-select');
+  var key = (sel && sel.value) ? sel.value : getDefaultReportMonthKey();
+  var p = parseReportMonthKey(key);
+  var stats = getMonthlyStats(p.y, p.m);
+  var html = buildMonthlyReportHtml(p.label, stats);
   var win = window.open('', '_blank');
   if (win) {
-    win.document.write('<!DOCTYPE html><html><head><title>Monthly Report Preview - ' + monthLabel + '</title><meta charset="UTF-8"></head><body style="margin:0;background:#f3f6fa;padding:20px">' + html + '</body></html>');
+    win.document.write('<!DOCTYPE html><html><head><title>Monthly Report Preview - ' + p.label + '</title><meta charset="UTF-8"></head><body style="margin:0;background:#f3f6fa;padding:20px">' + html + '</body></html>');
     win.document.close();
   } else {
     showToast('Pop-up blocked. Please allow pop-ups for this site.', 'danger');
@@ -2110,21 +2107,10 @@ function previewMonthlyReport() {
 function closeMonthlyReportModal(){var m=document.getElementById('monthly-report-modal');if(m)m.style.display='none';}
 function submitMonthlyReport(){var sel=document.getElementById('monthly-report-select');var m=sel?sel.value:'';closeMonthlyReportModal();if(m)sendMonthlyReport(m);}
 function showMonthlyReportModal() {
-  var today = liveISO();
-  // Determine which month to suggest based on schedule
-  var suggestedMonth = null;
-  var suggestedDate = null;
-  Object.keys(REPORT_SCHEDULE).forEach(function(date) {
-    if (date <= today && !suggestedMonth) { suggestedMonth = REPORT_SCHEDULE[date]; suggestedDate = date; }
-    if (date === today) { suggestedMonth = REPORT_SCHEDULE[date]; suggestedDate = date; }
-  });
-
-  var monthOptions = Object.values(REPORT_SCHEDULE).map(function(m) {
-    var schedDate = Object.keys(REPORT_SCHEDULE).find(function(k) { return REPORT_SCHEDULE[k] === m; });
-    var isPast = schedDate <= today;
-    var isToday = schedDate === today;
-    var label = m + ' (send date: ' + schedDate + (isToday ? ' — TODAY' : isPast ? ' — past due' : '') + ')';
-    return '<option value="' + m + '"' + (m === suggestedMonth ? ' selected' : '') + '>' + label + '</option>';
+  var defKey = getDefaultReportMonthKey();
+  var monthOptions = getReportMonthOptions(13).map(function(o, idx) {
+    var tag = o.key === defKey ? '  ·  recommended (last month)' : (idx === 0 ? '  ·  current month' : '');
+    return '<option value="' + o.key + '"' + (o.key === defKey ? ' selected' : '') + '>' + o.label + tag + '</option>';
   }).join('');
 
   var box = document.getElementById('monthly-report-modal');
@@ -2140,7 +2126,9 @@ function showMonthlyReportModal() {
       '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Sends a color-coded department completion report to all managers and leadership.</div>' +
       '<div style="margin-bottom:16px">' +
       '<label style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Select Month</label>' +
-      '<select id="monthly-report-select" style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:inherit">' + monthOptions + '</select>' +
+      '<select id="monthly-report-select" onchange="updateMonthlyReportSummary()" style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:inherit">' + monthOptions + '</select>' +
+      '<div style="font-size:10.5px;color:var(--text3);margin-top:6px;line-height:1.45">Defaults to <strong>last month</strong>. Send after your 7th-of-month inspection so the prior month\'s tasks (due by the 7th) are finalized. Reports group tasks by inspection date, so e.g. June covers the June 7th &amp; 21st inspections.</div>' +
+      '<div id="monthly-report-summary" style="margin-top:12px"></div>' +
       '</div>' +
       '<div style="background:var(--blue-light);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:11px;color:var(--blue-dark)">' +
       '<strong>Recipients:</strong> Leadership team + all department manager emails (' + (LEADERSHIP_EMAILS.length) + ' fixed + all managers)</div>' +
@@ -2155,6 +2143,40 @@ function showMonthlyReportModal() {
     var sel = document.getElementById('monthly-report-select');
     if (sel) sel.innerHTML = monthOptions;
   }
+  updateMonthlyReportSummary();
+}
+
+function updateMonthlyReportSummary() {
+  var box = document.getElementById('monthly-report-summary');
+  var sel = document.getElementById('monthly-report-select');
+  if (!box || !sel) return;
+  var p = parseReportMonthKey(sel.value);
+  var stats = getMonthlyStats(p.y, p.m);
+
+  if (!stats.totalAssigned) {
+    box.innerHTML = '<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--text3)">No tasks were inspected in <strong>' + p.label + '</strong>. Nothing to report for this month.</div>';
+    return;
+  }
+
+  var below = stats.depts.filter(function(d) { return d.assigned && d.pct < 89; });
+  var ok = stats.overallPct !== null && stats.overallPct >= 89;
+  var accent = ok ? '#1f9254' : '#c0392b';
+  var bg = ok ? '#e7f6ec' : '#fdecea';
+  var pctTxt = stats.overallPct === null ? '—' : stats.overallPct.toFixed(1) + '%';
+
+  var belowTxt = below.length
+    ? '<span style="color:#c0392b;font-weight:600">' + below.length + ' dept' + (below.length > 1 ? 's' : '') + ' below 89%:</span> ' + below.map(function(d) { return d.id + ' (' + d.pct.toFixed(0) + '%)'; }).join(', ')
+    : '<span style="color:#1f9254;font-weight:600">All departments at or above 89%.</span>';
+
+  box.innerHTML =
+    '<div style="background:' + bg + ';border:1px solid ' + accent + '33;border-radius:8px;padding:11px 13px">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">' +
+        '<span style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">' + p.label + ' · Overall</span>' +
+        '<span style="font-size:20px;font-weight:800;color:' + accent + '">' + pctTxt + '</span>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text2);margin-top:4px">' + stats.totalCompleted + ' of ' + stats.totalAssigned + ' tasks completed across ' + stats.depts.filter(function(d){return d.assigned;}).length + ' active dept(s)</div>' +
+      '<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5">' + belowTxt + '</div>' +
+    '</div>';
 }
 // ===== END MONTHLY REPORT =====
 
